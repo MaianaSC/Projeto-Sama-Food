@@ -1,0 +1,381 @@
+<!DOCTYPE html>
+<html>
+
+<head>
+    <meta charset="utf-8" />
+    <meta name="format-detection" content="telephone=no" />
+    <meta name="msapplication-tap-highlight" content="no" />
+    <meta name="viewport" content="user-scalable=no, initial-scale=1, maximum-scale=1, minimum-scale=1, width=device-width" />
+    <meta http-equiv="Content-Security-Policy" content="default-src * 'unsafe-inline'; style-src 'self' 'unsafe-inline'; media-src *" />
+    <link rel="stylesheet" type="text/css" href="css/bootstrap.min.css" />
+    <link rel="stylesheet" type="text/css" href="css/index.css" />
+    <title>Sama Food</title>
+</head>
+<body>
+    <script type="text/javascript" src="cordova.js"></script>
+    <script type="text/javascript" src="js/jquery-1.12.4.min.js"></script>
+    <script type="text/javascript" src="js/index.js"></script>
+    <script type="text/javascript">
+    app.initialize();
+
+    var db = window.openDatabase("Database", "1.0", "restaurantes", 2000000);
+    db.transaction(createDB, errorDB, successDB);
+    document.addEventListener("deviceready", onDeviceReady, false);
+    
+    function onDeviceReady(){
+        
+        db.transaction(createDB, errorDB, successDB);
+    }
+
+    function errorDB(err){
+        alert("Erro: "+err);
+    }
+    function successDB(){}
+
+
+
+    //Criar a tabela se a mesma não existir    
+    function createDB(tx){
+        tx.executeSql('CREATE TABLE IF NOT EXISTS restaurantes (id INTEGER PRIMARY KEY, nome VARCHAR(500), telefone NUM(11) )');            
+    }
+
+
+    //Insere informações no banco de dados
+    function restaurantes_insert()
+    {
+        db.transaction(restaurantes_insert_db, errorDB, successDB);
+    }
+    function restaurantes_insert_db(tx){
+        
+        var nome = $("#restaurantes_nome").val();
+         //var endereco = $("#restaurantes_endereco").val();
+        var telefone = $("#restaurantes_telefone").val();
+
+        tx.executeSql('INSERT INTO restaurantes (nome, telefone) VALUES ("'+ nome +'", "'+ telefone +'")');
+        restaurantes_view();
+    }
+
+
+
+
+    function restaurantes_update_abrir_tela(restaurantes_id){
+        $("#tela_padrao").hide();
+        $("#tela_edicao").show();
+
+        var restaurantes_nome_update = $("#restaurantes_item_"+restaurantes_id+" .restaurantes_info h3").html();
+        //var restaurantes_endereco_update = $("#restaurantes_item_"+restaurantes_id+" .restaurantes_info h4").html();
+        var restaurantes_telefone_update = $("#restaurantes_item_"+restaurantes_id+" .restaurantes_info h5").html();
+
+        $("#restaurantes_id_update").val(restaurantes_id);
+        $("#restaurantes_nome_update").val(restaurantes_nome_update);
+        //$("#restaurantes_endereco_update").val(restaurantes_endereco_update);
+        $("#restaurantes_telefone_update").val(restaurantes_telefone_update);
+    }
+    function restaurantes_update_fechar_tela(){
+        $("#tela_edicao").hide();
+        $("#tela_padrao").show();
+    }
+
+
+
+    function restaurantes_update(){
+
+        db.transaction(restaurantes_update_db, errorDB, successDB);
+    }
+    function restaurantes_update_db(tx){
+
+        var restaurantes_id_novo = $("#restaurantes_id_update").val();
+        var restaurantes_nome_novo = $("#restaurantes_nome_update").val();
+        //var restaurantes_endereco_novo = $("#restaurantes_endereco_update").val();
+        var restaurantes_telefone_novo = $("#restaurantes_telefone_update").val();
+
+        tx.executeSql('UPDATE restaurantes SET nome = "'+restaurantes_nome_novo+'", telefone = "'+restaurantes_telefone_novo+'" WHERE id = "'+restaurantes_id_novo+'" ');
+
+        restaurantes_update_fechar_tela();
+        restaurantes_view();
+    }
+
+
+
+
+    function restaurantes_delete(restaurantes_id){
+
+        $("#restaurantes_id_delete").val(restaurantes_id);
+
+        db.transaction(restaurantes_delete_db, errorDB, successDB);
+
+    }
+    function restaurantes_delete_db(tx){
+        
+        var restaurantes_id_delete = $("#restaurantes_id_delete").val();
+        
+        tx.executeSql('DELETE FROM restaurantes WHERE id = '+ restaurantes_id_delete +' ');
+        restaurantes_view();
+    }
+
+
+    //Efetua a leitura do banco de dados
+    function restaurantes_view(){
+        db.transaction(restaurantes_view_db, errorDB, successDB);
+    }
+    function restaurantes_view_db(tx){
+        tx.executeSql('SELECT * FROM restaurantes', [], restaurantes_view_data, errorDB);
+    }
+    function restaurantes_view_data(tx, results){
+
+        $("#restaurantes_listagem").empty();
+
+        var len = results.rows.length;
+
+        for (var i=0; i<len; i++){
+
+            $("#restaurantes_listagem").append("<tr class='restaurantes_item_lista' id='restaurantes_item_" + results.rows.item(i).id + "'>"+
+                                            "<td class='restaurantes_info'><h3>" + results.rows.item(i).nome + "</h3><h5>" +
+                                             
+                                             results.rows.item(i).telefone + "</h5></td>"+
+                                            "<td><input type='button' class='btn btn-lg btn-danger' value='X' onclick='restaurantes_delete(" + results.rows.item(i).id + ")'><input type='button' class='btn btn-lg btn-warning' value='E' onclick='restaurantes_update_abrir_tela(" + results.rows.item(i).id + ")'></td>"+
+                                        "<tr>");
+        }
+    }
+  
+
+    </script>
+    <input type="hidden" id="restaurantes_id_delete">
+    <input type="hidden" id="restaurantes_id_update">
+    <div class="container" id="tela_padrao">
+        <div class="row">
+            <div class="col-md-12">
+                <h4>Nome</h4>
+                <input type="text" class="form-control" id="restaurantes_nome">
+                <br>
+                <!--<h4>Endereco</h4>
+                <input type="text" class="form-control" id="restaurantes_endereco">
+                <br>-->
+                <h4>Telefone</h4>
+                <input type="text" class="form-control" id="restaurantes_telefone">
+                <br>
+                <br>
+                <input type="button" class="btn btn-lg btn-primary form-control" value="Inserir" onclick="restaurantes_insert()">
+                <br>
+                <br>
+            </div>
+        </div>
+        <div class="row">
+            <div class="col-md-12">
+                <table class="table">
+                    <thead>
+                        <tr>
+                        </tr>
+                    </thead>
+                    <tbody id ="restaurantes_listagem">
+                    </tbody>
+                </table>
+            </div>
+        </div>
+    </div>
+    <div class="container" id="tela_edicao" hidden>
+        <div class="row">
+            <div class="col-md-12">
+                <input type="button" class="btn btn-lg btn-primary form-control" value="Voltar" onclick="restaurantes_update_fechar_tela()">
+                <br>
+                <h3>Editando restaurante</h3>
+                  <tbody id ="restaurantes_listagem">
+                    </tbody>
+                <br>
+            </div>
+        </div>
+        <div class="row">
+            <div class="col-md-12">
+                <h4>Nome</h4>
+                <input type="text" class="form-control" id="restaurantes_nome_update">
+                <br>
+               <!-- <h4>Endereco</h4>
+                <input type="text" class="form-control" id="restaurantes_endereco_update">
+                <br> -->
+                <h4>Telefone</h4>
+                <input type="text" class="form-control" id="restaurantes_telefone_update">
+                <br>
+                <br>
+                <input type="button" class="btn btn-lg btn-primary form-control" value="Salvar edição" onclick="restaurantes_update()">
+                <br>
+                <br>
+            </div>
+        </div>
+    </div>
+    <script>
+    restaurantes_view();
+    </script>
+</body>
+</html>
+
+
+
+
+
+
+
+<!--<!DOCTYPE html>
+<html>
+
+<head>
+    <meta charset="utf-8">
+    <meta name="viewport" content="initial-scale=1, maximum-scale=1, user-scalable=no, width=device-width">
+    <title>Database Example</title>
+    <link rel="stylesheet" href="http://code.jquery.com/mobile/1.4.5/jquery.mobile-1.4.5.min.css" />
+    <script src="http://code.jquery.com/jquery-1.11.1.min.js"></script>
+    <script src="http://code.jquery.com/mobile/1.4.5/jquery.mobile-1.4.5.min.js"></script>
+    <script type="text/javascript" src="cordova.js"></script>
+
+</head>
+<style>
+    #imgArea {
+        border: 1px solid black;
+        max-width: 600px;
+    }
+</style>
+
+<script>
+    var db;
+
+    window.onload = function() {
+
+        $("#data_hora").val(new Date().toJSON().slice(0, 19));
+
+        document.getElementById('btnSave').addEventListener('click', saveData);
+
+        db = window.openDatabase("chamados", "1.0", "NESCoM", 200000);
+
+        document.getElementById('btnTakePicture').addEventListener('click', takePic);
+    }
+
+    function saveData(e) {
+
+        db.transaction(saveRecord, onError, onSuccess);
+
+    }
+
+    function saveRecord(transaction) {
+        var titulo = document.getElementById('titulo').value;
+        var descricao = document.getElementById('descricao').value;
+        var telefone = document.getElementById('telefone').value;
+        var horarioFunc = document.getElementById('horarioFunc').value;
+        var valorEntrega = document.getElementById('valorEntrega').value;
+
+        var image = document.getElementById('imgArea').src;
+        
+        alert (image);
+
+
+        transaction.executeSql('CREATE TABLE IF NOT EXISTS chamadosList (id INTEGER PRIMARY KEY AUTOINCREMENT, titulo TEXT NOT NULL, descricao TEXT NOT NULL, photo_uri TEXT) ');
+
+        var sql = "INSERT INTO chamadosList (titulo,descricao, photo_uri) VALUES ('" + titulo + "', '" + descricao + "', '" + telefone +"', '" + horarioFunc + "', '" + valorEntrega + "','" + image + "')";
+        console.log(sql);
+        transaction.executeSql(sql);
+        
+        
+    }
+
+    function onSuccess() {
+
+        alert("Registro Salvo");
+        document.getElementById("btnSave").disabled = true;
+        console.log("Record Saved");
+    }
+
+    function onError(error) {
+        alert("Ops...algum problema aconteceu.");
+        console.log("SQL error: " + error);
+    }
+
+    function takePic(e) {
+        var options = {
+            quality: 80,
+            destinationType: Camera.DestinationType.FILE_URI,
+            encodingType: Camera.EncodingType.JPEG,
+            mediaType: Camera.MediaType.PICTURE,
+            targetWidth: 1200,
+            targetHeight: 800
+        }
+        navigator.camera.getPicture(success, fail, options);
+    }
+
+    function success(thePicture) {
+        var image = document.getElementById('imgArea');
+        image.src = thePicture;
+    }
+
+    function fail(e) {
+        alert("Image failed: " + e.message);
+    }
+</script>
+
+
+<body>
+    <div data-role="page" id="page1">
+
+        <div data-role="header">
+            <h1>Cadastro de Restaurantes</h1>
+        </div>
+        <!-- header --> 
+
+        <!-- <div data-role="main" class="ui-content">
+
+            <div id="container">
+                <!--<label for="data_hora">Data</label>
+                <input type="datetime-local" id="data_hora" /> --> 
+                
+
+
+               <!-- <label for="titulo">Nome do Estabelecimento</label>
+                <input type="text" id="titulo" />
+                <label for="descricao">Endereço</label>
+                <textarea id="descricao" name="message" rows="10" cols="30"></textarea>
+
+               <label for="telefone">Telefone</label>
+                <textarea id="telefone" name="message" rows="10" cols="30"></textarea>
+
+                <label for="horarioFunc">Horário de Funcionamento</label>
+                 <textarea id="horarioFunc" name="message" rows="10" cols="30"></textarea>
+
+                 <label for="valorEntrega">Valor da taxa de entrega</label>
+                  <textarea id="valorEntrega" name="message" rows="10" cols="30"></textarea>
+
+
+                <img id="imgArea" />
+
+                <button id="btnTakePicture">Adicionar Foto</button>
+
+                <button id="btnSave">Salvar Informações </button>
+
+            </div>
+
+            <button onclick="location.href='index.html'">Cancelar</button>
+
+        </div>
+        <!-- main -->
+
+      <!--  <div data-role="footer" id="footer">
+            <h2>br.ufes.dcel</h2>
+        </div>
+        <!-- footer -->
+
+  <!--  </div>
+    <!--page!--> 
+
+<!-- </body>
+
+</html> -->
+
+
+
+
+
+
+
+
+
+<!--
+        <script type="text/javascript" src="cordova.js"></script>
+        <script type="text/javascript" src="js/index.js"></script>
+    </body>
+</html> -->
